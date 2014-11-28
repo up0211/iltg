@@ -93,7 +93,7 @@ module SaveXmlForm
     return %Q|<node 操作时间="#{Time.new.to_s(:db)}" 操作人ID="#{current_user.id}" 操作人姓名="#{current_user.name}" 操作人单位="#{current_user.department.nil? ? "暂无" : current_user.department.name}" 操作内容="#{action}" 当前状态="$STATUS$" 备注="#{remark}" IP地址="#{request.remote_ip}[#{IPParse.parse(request.remote_ip).gsub("Unknown", "未知")}]"/>|
   end
 
-  # 生成XML 用于品目参数维护 返回XML
+  # 生成XML 用于品目参数维护，返回XML
   def create_xml(xml,model)
     column_arr = Nokogiri::XML(xml).xpath("/root/node[@column]").map{ |node| node.attributes["column"].to_str }
     doc = Nokogiri::XML::Document.new
