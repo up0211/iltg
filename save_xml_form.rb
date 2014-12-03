@@ -18,6 +18,7 @@ module SaveXmlForm
       unless logs_remark.blank?
         write_logs(master_obj,title[:action],logs_remark) # 写日志
       end
+      tips_get("保存成功。")
       return master_obj
     else
       flash_get(master_obj.errors.full_messages)
@@ -38,6 +39,7 @@ module SaveXmlForm
       unless logs_remark.blank?
         write_logs(master_obj,title[:action],logs_remark) # 写日志
       end
+      tips_get("修改成功。")
       return master_obj
     else
       flash_get(obj.errors.full_messages)
@@ -58,6 +60,7 @@ module SaveXmlForm
       unless logs_remark.blank?
         write_logs(obj,title[:action],logs_remark) # 写日志
       end
+      tips_get("保存成功。")
       return obj
     else
       flash_get(obj.errors.full_messages)
@@ -76,6 +79,7 @@ module SaveXmlForm
       unless logs_remark.blank?
         write_logs(obj,title[:action],logs_remark) # 写日志
       end
+      tips_get("修改成功。")
       return obj
     else
       flash_get(obj.errors.full_messages)
