@@ -17,9 +17,14 @@ module AboutStatus
 	  end
 
 	  # 批量改变状态并写入日志
-	  def batch_change_status_and_write_logs(id_array,status,batch_logs)
-			status = self.class.get_status_attributes(status)[1] unless status.is_a?(Integer)
-	    self.where(id: id_array).update_all("status = #{status}, logs = replace(logs,'</root>','  #{batch_logs.gsub('$STATUS$',status.to_s)}\n</root>')")
+	  def batch_change_status_and_write_logs(id_array,status,stateless_logs)
+			status = self.get_status_attributes(status)[1] unless status.is_a?(Integer)
+	    self.where(id: id_array).where.not(status: status).update_all("status = #{status}, logs = replace(IFNULL(logs,'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n</root>'),'</root>','  #{stateless_logs.gsub('$STATUS$',status.to_s)}\n</root>')")
+	  end
+
+	  # 判断是否树形结构
+	  def is_ancestry?
+	  	self.attribute_names.include?("ancestry")
 	  end
 
 	end
@@ -47,9 +52,15 @@ module AboutStatus
 	end
 
 	# 更新状态并写入日志
-	def change_status_and_write_logs(status,logs)
-		status = self.class.get_status_attributes(status)[1] unless status.is_a?(Integer)
-		self.update_columns("status" => status, "logs" => logs) unless status == self.status
+	def change_status_and_write_logs(status,stateless_logs)
+		# status = self.class.get_status_attributes(status)[1] unless status.is_a?(Integer)
+		# self.update_columns("status" => status, "logs" => logs) unless status == self.status
+		if self.class.is_ancestry? && self.has_children?
+			id_array = self.class.self_and_descendants(self.id).status_not_in([404, status]).map(&:id)
+		else
+			id_array = self.id
+		end
+		self.class.batch_change_status_and_write_logs(id_array,status,stateless_logs)
 	end
 
 	# 带图标的动作
