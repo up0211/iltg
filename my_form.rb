@@ -305,7 +305,7 @@ private
     form_state = _form_states('textarea textarea-resizable',input_opts[:node_attr])
     str = %Q|
     <label class='#{form_state}'>
-      <textarea class='autosize form-control' rows='2' #{input_opts[:node_attr].join(" ")}>#{input_opts[:value]}</textarea>
+      <textarea rows='2' #{input_opts[:node_attr].join(" ")}>#{input_opts[:value]}</textarea>
     </label>
     #{input_opts[:hint].blank? ? '' : "<div class='note'><strong>提示:</strong> #{input_opts[:hint]}</div>" }|
   end
@@ -314,7 +314,7 @@ private
     form_state = _form_states('textarea textarea-resizable',input_opts[:node_attr])
     str = %Q|
     <label class='#{form_state}'>
-      <textarea class='autosize form-control' rows='2' #{input_opts[:node_attr].join(" ")}>#{input_opts[:value]}</textarea>
+      <textarea rows='2' #{input_opts[:node_attr].join(" ")}>#{input_opts[:value]}</textarea>
     </label>
     #{input_opts[:hint].blank? ? '' : "<div class='note'><strong>提示:</strong> #{input_opts[:hint]}</div>" }|
   end
