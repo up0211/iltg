@@ -1,5 +1,7 @@
 class MyValidator < ActiveModel::Validator
   def validate(record)
+    changed_keys = record.changes.keys.delete_if{|k| %(status logs).include?(k)}
+    return if changed_keys.blank? # 如果只改状态和日志则跳过检验（可能是来做批量操作）
     Nokogiri::XML(record.class.xml).xpath("/root/node[@class]").each do |node|
       attr = node.attributes["class"].to_str
       if attr.index("required")
