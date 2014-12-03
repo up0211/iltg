@@ -108,7 +108,6 @@ module SaveXmlForm
     doc << "<root>"
     node = get_logs_node(doc,action,"$STATUS$",remark)
     return node.to_s
-    # return %Q|<node 操作时间="#{Time.new.to_s(:db)}" 操作人ID="#{current_user.id}" 操作人姓名="#{current_user.name}" 操作人单位="#{current_user.department.nil? ? "暂无" : current_user.department.name}" 操作内容="#{action}" 当前状态="$STATUS$" 备注="#{remark}" IP地址="#{request.remote_ip}[#{IPParse.parse(request.remote_ip).gsub("Unknown", "未知")}]"/>|
   end
 
   # 生成XML 用于品目参数维护，返回XML
@@ -273,28 +272,6 @@ private
       return %Q|<div class="headline"><h3 class="heading-sm">#{title}</h3></div><table class='table table-bordered'><thead><tr><th>参数名称</th><th>修改前</th><th>修改后</th></tr></thead><tbody>#{spoor}</tbody></table>|.html_safe.to_str
     end
   end
-
-  # 下面两个方法暂时不用,single form 的日志暂时用prepare_origin_logs_remark 来代替
-
-  # # 获取SingleForm创建时的原始数据
-  # def get_single_origin_data(model)
-  #   logs_remark = prepare_origin_logs_remark(model)
-  #   unless logs_remark.blank?
-  #     return prepare_logs_content(model.new,"录入数据",logs_remark)
-  #   else
-  #     return nil
-  #   end
-  # end
-
-  # # 获取SingleForm修改痕迹
-  # def get_single_edit_spoor(obj)
-  #   logs_remark = prepare_edit_logs_remark(obj)
-  #   unless logs_remark.blank?
-  #     return prepare_logs_content(obj,"修改数据",logs_remark)
-  #   else
-  #     return nil
-  #   end
-  # end
 
   # 保存从表数据
   def save_slaves(master_obj,slave,slave_xml,slave_title="数据")

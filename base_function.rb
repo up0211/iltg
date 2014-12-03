@@ -133,7 +133,7 @@ def get_node_value(obj,node,for_form=false)
         <i class='cbp_tmicon rounded-x hidden-xs'></i>
         <div class='cbp_tmlabel'>
           <h4><i class="fa fa-chevron-circle-right"></i> #{obj.icon_action(n.attributes["操作内容"].to_str,false)}</h4>
-          <div style="display:none;">#{n.attributes["备注"]}</div>
+          <div class="no-display margin-bottom-10">#{n.attributes["备注"]}</div>
           <p>#{infobar.join("&nbsp;&nbsp;")}</p>
         </div>
       </li>|
