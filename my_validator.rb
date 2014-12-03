@@ -26,7 +26,7 @@ class MyValidator < ActiveModel::Validator
   end
 
   def is_required?(s)
-    return s.blank?
+    return s.blank? && s != false # 布尔型判断的时候 false.blank? => true
   end
 
   def is_email?(s)

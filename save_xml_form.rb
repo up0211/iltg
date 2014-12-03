@@ -11,10 +11,7 @@ module SaveXmlForm
     title[:slave_title] ||= "明细信息"
     attribute = prepare_params_for_save(master,master_xml,other_attrs) # 获取并整合主表参数信息
     master_obj = master.create(attribute) #保存主表
-    unless master_obj.errors.messages.blank?
-      flash_get master_obj.errors.messages[:base]
-      return master_obj
-    else
+    unless master_obj.id.nil?
       logs_remark = prepare_origin_logs_remark(master,master_xml,title[:master_title]) #主表日志
       logs_remark << save_uploads(master_obj) # 保存附件并将日志添加到主表日志
       logs_remark << save_slaves(master_obj,slave,slave_xml,title[:slave_title]) # 保存从表并将日志添加到主表日志
@@ -22,6 +19,9 @@ module SaveXmlForm
         write_logs(master_obj,title[:action],logs_remark) # 写日志
       end
       return master_obj
+    else
+      flash_get(master_obj.errors.full_messages)
+      return false
     end
   end
 
@@ -33,12 +33,16 @@ module SaveXmlForm
     attribute = prepare_params_for_save(master_obj.class,master_xml,other_attrs) # 获取并整合主表参数信息
     logs_remark = prepare_edit_logs_remark(master_obj,master_xml,"修改#{title[:master_title]}") #主表日志--修改痕迹 先取日志再更新主表，否则无法判断修改前后的变化情况
     save_uploads(master_obj) # 保存附件,附件日志已经在文件上传时记录了
-    master_obj.update_attributes(attribute) #更新主表
-    logs_remark << save_slaves(master_obj,slave,slave_xml,title[:slave_title]) # 保存从表并将日志添加到主表日志
-    unless logs_remark.blank?
-      write_logs(master_obj,title[:action],logs_remark) # 写日志
+    if master_obj.update_attributes(attribute) #更新主表
+      logs_remark << save_slaves(master_obj,slave,slave_xml,title[:slave_title]) # 保存从表并将日志添加到主表日志
+      unless logs_remark.blank?
+        write_logs(master_obj,title[:action],logs_remark) # 写日志
+      end
+      return master_obj
+    else
+      flash_get(obj.errors.full_messages)
+      return false
     end
-    return master_obj
   end
 
   #创建并写日志
@@ -48,12 +52,17 @@ module SaveXmlForm
     title[:master_title] ||= "详细信息"
     attribute = prepare_params_for_save(model,xml,other_attrs)
     obj = model.create(attribute)
-    logs_remark = prepare_origin_logs_remark(model,xml,title[:master_title]) #主表日志
-    logs_remark << save_uploads(obj) # 保存附件并将日志添加到主表日志
-    unless logs_remark.blank?
-      write_logs(obj,title[:action],logs_remark) # 写日志
+    unless obj.id.nil?
+      logs_remark = prepare_origin_logs_remark(model,xml,title[:master_title]) #主表日志
+      logs_remark << save_uploads(obj) # 保存附件并将日志添加到主表日志
+      unless logs_remark.blank?
+        write_logs(obj,title[:action],logs_remark) # 写日志
+      end
+      return obj
+    else
+      flash_get(obj.errors.full_messages)
+      return false
     end
-    return obj
   end
 
   #更新并写日志
@@ -63,11 +72,15 @@ module SaveXmlForm
     attribute = prepare_params_for_save(obj.class,xml,other_attrs)
     logs_remark = prepare_edit_logs_remark(obj,xml,"修改#{title[:master_title]}") #主表日志--修改痕迹 先取日志再更新主表，否则无法判断修改前后的变化情况
     save_uploads(obj) # 保存附件，附件日志已经上文件上传时记录了
-    obj.update_attributes(attribute) #更新主表
-    unless logs_remark.blank?
-      write_logs(obj,title[:action],logs_remark) # 写日志
+    if obj.update_attributes(attribute) #更新主表
+      unless logs_remark.blank?
+        write_logs(obj,title[:action],logs_remark) # 写日志
+      end
+      return obj
+    else
+      flash_get(obj.errors.full_messages)
+      return false
     end
-    return obj
   end
 
   #  手动写入日志 确保表里面有logs和status字段才能用这个函数
@@ -93,7 +106,7 @@ module SaveXmlForm
     return %Q|<node 操作时间="#{Time.new.to_s(:db)}" 操作人ID="#{current_user.id}" 操作人姓名="#{current_user.name}" 操作人单位="#{current_user.department.nil? ? "暂无" : current_user.department.name}" 操作内容="#{action}" 当前状态="$STATUS$" 备注="#{remark}" IP地址="#{request.remote_ip}[#{IPParse.parse(request.remote_ip).gsub("Unknown", "未知")}]"/>|
   end
 
-  # 生成XML 用于品目参数维护 返回XML
+  # 生成XML 用于品目参数维护，返回XML
   def create_xml(xml,model)
     column_arr = Nokogiri::XML(xml).xpath("/root/node[@column]").map{ |node| node.attributes["column"].to_str }
     doc = Nokogiri::XML::Document.new
