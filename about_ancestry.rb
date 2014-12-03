@@ -4,6 +4,7 @@ module AboutAncestry
 	def self.included(base)
     base.extend(AncestryClassMethods)
     base.class_eval do 
+      # 自己和后代
       scope :self_and_descendants, lambda { |id| where(["FIND_IN_SET(?, CONCAT_WS(',',id,REPLACE(ancestry,'/',','))) >0", id ]) }
       default_scope -> {order(:ancestry, :sort, :id)}
       # 树形结构
@@ -91,13 +92,6 @@ module AboutAncestry
     self.parent = target_node
     self.sort = target_node.children.count + 1
     self.save
-  end
-
-  # 树形节点改变状态并写日志
-  def ztree_change_status_and_write_logs(status,logs)
-    st = self.class.get_status_attributes(status)[1] unless status.is_a?(Integer)
-    id_array = self.has_children? ? self.class.self_and_descendants(self.id).status_not_in([404, st]).map(&:id) : self.id
-    return self.class.batch_change_status_and_write_logs(id_array,st,logs)
   end
 
 end

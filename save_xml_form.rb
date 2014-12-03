@@ -100,10 +100,15 @@ module SaveXmlForm
     return result.update(other_attrs)
   end
 
-  # 批量操作要替换的日志
-  def batch_logs(action,remark='')
-    remark = remark.blank? ? "来自批量操作" : "#{remark}[来自批量操作]"
-    return %Q|<node 操作时间="#{Time.new.to_s(:db)}" 操作人ID="#{current_user.id}" 操作人姓名="#{current_user.name}" 操作人单位="#{current_user.department.nil? ? "暂无" : current_user.department.name}" 操作内容="#{action}" 当前状态="$STATUS$" 备注="#{remark}" IP地址="#{request.remote_ip}[#{IPParse.parse(request.remote_ip).gsub("Unknown", "未知")}]"/>|
+  # 没有状态的日志内容（备用），批量操作或者单一修改状态是要替换成正确的状态值
+  def stateless_logs(action,remark='',is_batch=true)
+    remark = "#{remark}[来自批量操作]" if is_batch
+    doc = Nokogiri::XML::Document.new
+    doc.encoding = "UTF-8"
+    doc << "<root>"
+    node = get_logs_node(doc,action,"$STATUS$",remark)
+    return node.to_s
+    # return %Q|<node 操作时间="#{Time.new.to_s(:db)}" 操作人ID="#{current_user.id}" 操作人姓名="#{current_user.name}" 操作人单位="#{current_user.department.nil? ? "暂无" : current_user.department.name}" 操作内容="#{action}" 当前状态="$STATUS$" 备注="#{remark}" IP地址="#{request.remote_ip}[#{IPParse.parse(request.remote_ip).gsub("Unknown", "未知")}]"/>|
   end
 
   # 生成XML 用于品目参数维护，返回XML
@@ -198,7 +203,6 @@ private
 
   # 准备日志的内容
   def prepare_logs_content(obj,action,remark='')
-    user = current_user
     unless obj.logs.nil?
       doc = Nokogiri::XML(obj.logs)
     else
@@ -206,16 +210,23 @@ private
       doc.encoding = "UTF-8"
       doc << "<root>"
     end
+    status = (!obj.attribute_names.include?("status") || obj.status.nil?) ? "-" : obj.status
+    node = get_logs_node(doc,action,status,remark)
+    return doc.to_s
+  end
+
+  # 日志的节点信息,为了和批量修改状态共用一个方法，stauts设定为传入值。 
+  def get_logs_node(doc,action,status,remark)
     node = doc.root.add_child("<node>").first
     node["操作时间"] = Time.now.to_s(:db)
-    node["操作人ID"] = user.id.to_s
-    node["操作人姓名"] = user.name.to_s
-    node["操作人单位"] = user.department.nil? ? "暂无" : user.department.name.to_s
+    node["操作人ID"] = current_user.id.to_s
+    node["操作人姓名"] = current_user.name.to_s
+    node["操作人单位"] = current_user.department.nil? ? "暂无" : current_user.department.name.to_s
     node["操作内容"] = action
-    node["当前状态"] = (!obj.attribute_names.include?("status") || obj.status.nil?) ? "-" : obj.status
+    node["当前状态"] = status
     node["备注"] = remark
     node["IP地址"] = "#{request.remote_ip}|#{IPParse.parse(request.remote_ip).gsub("Unknown", "未知")}"
-    return doc.to_s
+    return node
   end
 
   # 准备创建纪录时的原始日志
