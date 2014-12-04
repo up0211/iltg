@@ -19,7 +19,7 @@ module AboutStatus
 	  # 批量改变状态并写入日志
 	  def batch_change_status_and_write_logs(id_array,status,stateless_logs)
 			status = self.get_status_attributes(status)[1] unless status.is_a?(Integer)
-	    self.where(id: id_array).where.not(status: status).update_all("status = #{status}, logs = replace(IFNULL(logs,'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n</root>'),'</root>','  #{stateless_logs.gsub('$STATUS$',status.to_s)}\n</root>')")
+	    self.where(id: id_array).where.not(status: [404, status]).update_all("status = #{status}, logs = replace(IFNULL(logs,'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<root>\n</root>'),'</root>','  #{stateless_logs.gsub('$STATUS$',status.to_s)}\n</root>')")
 	  end
 
 	  # 判断是否树形结构
@@ -27,6 +27,12 @@ module AboutStatus
 	  	self.attribute_names.include?("ancestry")
 	  end
 
+	  # 带图标的动作
+		def icon_action(action,left=true)
+			key = Dictionary.icons.keys.find{|key|action.index(key)}
+			icon = key ? Dictionary.icons[key] : Dictionary.icons["其他"]
+			return left ? "<i class='fa #{icon}'></i> #{action}" : "#{action} <i class='fa #{icon}'></i>"
+		end
 	end
 
 	# 状态标签
@@ -61,13 +67,6 @@ module AboutStatus
 			id_array = self.id
 		end
 		self.class.batch_change_status_and_write_logs(id_array,status,stateless_logs)
-	end
-
-	# 带图标的动作
-	def icon_action(action,left=true)
-		key = Dictionary.icons.keys.find{|key|action.index(key)}
-		icon = key ? Dictionary.icons[key] : Dictionary.icons["其他"]
-		return left ? "<i class='fa #{icon}'></i> #{action}" : "#{action} <i class='fa #{icon}'></i>"
 	end
 
 end
